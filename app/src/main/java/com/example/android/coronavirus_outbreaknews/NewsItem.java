@@ -1,7 +1,5 @@
 package com.example.android.coronavirus_outbreaknews;
 
-import java.util.Date;
-
 public class NewsItem {
 
     private final String mTitle;
