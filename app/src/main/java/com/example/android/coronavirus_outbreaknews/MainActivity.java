@@ -1,22 +1,23 @@
 package com.example.android.coronavirus_outbreaknews;
 
+import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.Uri;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,14 +25,14 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements NewsAdapter.ListItemClickListener
         , LoaderManager.LoaderCallbacks<List<NewsItem>> {
 
-    private static final String NEWS_REQUEST_URL =
-            "https://content.guardianapis.com/search?tag=world%2Fcoronavirus-outbreak&show-tags=contributor&api-key=test";
+    private static final String NEWS_REQUEST_URL = "https://content.guardianapis.com/search";
     private static final int NEWS_LOADER_ID = 1;
 
     private TextView mEmptyStateTextView;
     private ProgressBar mLoadingIndicator;
     private RecyclerView mNewsListView;
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,8 +45,10 @@ public class MainActivity extends AppCompatActivity implements NewsAdapter.ListI
         mNewsListView.setHasFixedSize(true);
 
         ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        if (activeNetwork != null && activeNetwork.isConnected()) {
+        NetworkCapabilities capabilities = cm.getNetworkCapabilities(cm.getActiveNetwork());
+        if (capabilities != null
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
             mLoadingIndicator.setVisibility(View.VISIBLE);
             LoaderManager.getInstance(this).initLoader(NEWS_LOADER_ID, null, this);
         }
@@ -63,7 +66,14 @@ public class MainActivity extends AppCompatActivity implements NewsAdapter.ListI
     @NonNull
     @Override
     public Loader<List<NewsItem>> onCreateLoader(int id, @Nullable Bundle args) {
-        return new NewsLoader(this, NEWS_REQUEST_URL);
+        Uri baseUri = Uri.parse(NEWS_REQUEST_URL);
+        Uri.Builder uriBuilder = baseUri.buildUpon();
+        uriBuilder.appendQueryParameter("tag", "world/coronavirus-outbreak");
+        // show contributor tags in response to get news author(s)
+        uriBuilder.appendQueryParameter("show-tags", "contributor");
+        uriBuilder.appendQueryParameter("api-key", "test");
+
+        return new NewsLoader(this, uriBuilder.toString());
     }
 
     @Override

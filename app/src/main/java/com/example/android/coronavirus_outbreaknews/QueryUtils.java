@@ -1,7 +1,10 @@
 package com.example.android.coronavirus_outbreaknews;
 
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,15 +17,28 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Helper methods related to requesting and receiving News data from The Guardian website.
+ */
 public final class QueryUtils {
     private static final String LOG_TAG = QueryUtils.class.getSimpleName();
 
+    /**
+     * Private constructor to prevent creating objects from static utility class
+     */
     private QueryUtils(){}
 
+    /**
+     *  Fetch news object list from string request url
+     *
+     * @param requestUrl String
+     * @return List<NewsItem>
+     */
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public static List<NewsItem> fetchNewsData(String requestUrl) {
         URL url = createUrl(requestUrl);
         String jsonResponse = null;
@@ -34,6 +50,12 @@ public final class QueryUtils {
         return extractNews(jsonResponse);
     }
 
+    /**
+     * Returns new URL object from the given string URL.
+     *
+     * @param stringUrl input string
+     * @return URL object
+     */
     private static URL createUrl(String stringUrl) {
         URL url = null;
         try {
@@ -44,7 +66,14 @@ public final class QueryUtils {
         return url;
     }
 
-
+    /**
+     * Make an HTTP request to the given URL and return a String as the response.
+     *
+     * @param url Input URL object
+     * @return JSON response string
+     * @throws IOException If InputStream close fails
+     */
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private static String makeHttpRequest(URL url) throws IOException {
         String jsonResponse = "";
 
@@ -86,10 +115,19 @@ public final class QueryUtils {
         return jsonResponse;
     }
 
+    /**
+     * Convert the {@link InputStream} into a String which contains the
+     * whole JSON response from the server.
+     *
+     * @param inputStream InputStream to read from
+     * @return String response
+     * @throws IOException if BufferedReader readLine fails
+     */
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private static String readFromStream(InputStream inputStream) throws IOException {
         StringBuilder output = new StringBuilder();
         if (inputStream != null) {
-            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, Charset.forName("UTF-8"));
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
             BufferedReader reader = new BufferedReader(inputStreamReader);
             String line = reader.readLine();
             while (line != null) {
@@ -100,6 +138,13 @@ public final class QueryUtils {
         return output.toString();
     }
 
+    /**
+     * Return a list of {@link NewsItem} objects that has been built up from
+     * parsing the given JSON response.
+     *
+     * @param newsJSON String JSON news response
+     * @return List<NewsItem>
+     */
     public static List<NewsItem> extractNews(String newsJSON) {
         if (TextUtils.isEmpty(newsJSON)) {
             return null;
@@ -113,18 +158,18 @@ public final class QueryUtils {
                     .getJSONArray("results");
             for (int i = 0; i < newsArray.length(); i++) {
                 JSONObject JSONNewsItem = newsArray.getJSONObject(i);
-                String title = JSONNewsItem.getString("webTitle");
-                String section = JSONNewsItem.getString("sectionName");
-                String date = JSONNewsItem.getString("webPublicationDate")
+                String title = JSONNewsItem.optString("webTitle");
+                String section = JSONNewsItem.optString("sectionName");
+                String date = JSONNewsItem.optString("webPublicationDate")
                         .replaceFirst("T", " ")
                         .replaceFirst("Z", "");
                 String authors = "";
                 JSONArray tags = JSONNewsItem.getJSONArray("tags");
                 if (tags.length() > 0)
-                    authors = tags.getJSONObject(0).getString("webTitle");
+                    authors = tags.getJSONObject(0).optString("webTitle");
                 if (tags.length() > 1)
                     authors += ", and others";
-                String url = JSONNewsItem.getString("webUrl");
+                String url = JSONNewsItem.optString("webUrl");
                 newsItems.add(new NewsItem(title, section, authors, date, url));
             }
         } catch (JSONException e) {
