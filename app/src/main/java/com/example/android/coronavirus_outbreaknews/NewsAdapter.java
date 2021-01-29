@@ -16,12 +16,17 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsItemViewHo
         void onListItemClick(String url);
     }
 
-    private final List<NewsItem> mNewsItems;
+    private List<NewsItem> mNewsItems;
     private final ListItemClickListener mItemOnClickListener;
 
     public NewsAdapter(List<NewsItem> newsItems, ListItemClickListener itemOnClickListener) {
         mNewsItems = newsItems;
         mItemOnClickListener = itemOnClickListener;
+    }
+
+    public void resetData(List<NewsItem> newsItems) {
+        mNewsItems = newsItems;
+        notifyDataSetChanged();
     }
 
     @NonNull

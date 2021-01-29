@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements NewsAdapter.ListI
     private ProgressBar mLoadingIndicator;
     private RecyclerView mNewsListView;
 
+    private NewsAdapter mNewsAdapter = new NewsAdapter(new ArrayList<>(), this);
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements NewsAdapter.ListI
         mNewsListView = findViewById(R.id.news_list);
         mNewsListView.setLayoutManager(new LinearLayoutManager(this));
         mNewsListView.setHasFixedSize(true);
+        mNewsListView.setAdapter(mNewsAdapter);
 
         ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         NetworkCapabilities capabilities = cm.getNetworkCapabilities(cm.getActiveNetwork());
@@ -80,17 +83,17 @@ public class MainActivity extends AppCompatActivity implements NewsAdapter.ListI
     public void onLoadFinished(@NonNull Loader<List<NewsItem>> loader, List<NewsItem> data) {
         mLoadingIndicator.setVisibility(View.GONE);
         if (data == null || data.isEmpty()) {
-            mNewsListView.setAdapter(new NewsAdapter(new ArrayList<>(), this));
+            mNewsAdapter.resetData(new ArrayList<>());
             mEmptyStateTextView.setText(R.string.no_news);
             mEmptyStateTextView.setVisibility(View.VISIBLE);
         }
         else {
-            mNewsListView.setAdapter(new NewsAdapter(data, this));
+            mNewsAdapter.resetData(data);
         }
     }
 
     @Override
     public void onLoaderReset(@NonNull Loader<List<NewsItem>> loader) {
-        mNewsListView.setAdapter(new NewsAdapter(new ArrayList<>(), this));
+        mNewsAdapter.resetData(new ArrayList<>());
     }
 }
